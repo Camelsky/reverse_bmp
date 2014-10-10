@@ -53,14 +53,17 @@ def _get_bitmap(date, typename, section):
     key_fmt = dauconfig.dau_keys_conf[typename]
     key = key_fmt.format(date=date, month=date)
     if section:
-        key = dauconfig.BITMAP_BLK_PREFIX.format(key) % section
+        key = dauconfig.BITMAP_BLK_PREFIX.format(key=key) % section
     bits = REDIS.get(key)
-    return bmp.frombytes(bits)
+    logging.debug('redis get %s' % key)
+    if bits:
+        bmp.frombytes(bits)
+    return bmp
 
 def get_loss_uid(bdate, tdate):
-    ifover = config.MAX_BITMAP_LENGTH % config.BITMAP_BLK_LEN and 1 or 0
+    plus = dauconfig.MAX_BITMAP_LENGTH % dauconfig.BITMAP_BLK_LEN and 1 or 0
     sections = range(dauconfig.MAX_BITMAP_LENGTH/dauconfig.BITMAP_BLK_LEN + plus)
-    for sections in sections:
+    for section in sections:
         nbmp = _get_newuser_bmp(bdate, section)
         abmp = _get_active_bmp(tdate, section)
         lbmp = _lossu_bmp(nbmp, abmp)
@@ -73,8 +76,9 @@ def run():
     define('tday')
     tornado.options.parse_command_line()
     for uid in get_loss_uid(options.day, options.tday):
-        sys.stdout.write(uid)
-        sys.stdout.write("/n")
+        #sys.stdout.write(uid)
+        #sys.stdout.write("/n")
+        print uid
 
 if __name__ == '__main__':
     run()
