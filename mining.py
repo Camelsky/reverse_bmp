@@ -35,8 +35,8 @@ def read_uids(filename):
 	with open(filename) as f:
 		for line in f:
 			try:
-				uid = int(line)			
-				uids.append(uid)
+				#uid = int(line)			
+				uids.append(line.strip())
 			except:
 				pass
 	return uids
@@ -48,11 +48,14 @@ def collect_snslog(filename, uids):
 		for line in logf:
 			r = re.search(snslog_reg_str,line)
 			if r:
+				d = r.groupdict()
 				if d.get('uid') in uids:
-					d = r.groupdict()
+					logging.debug(d)
 					ev = d.get('event')
 					evs.update({ev:evs.get(ev,0)+1})
 	print evs
+	for k,v in evs.items():
+		print '%s,%s' % (k,v)
 
 def stat_evs(env, redisconn):
 	pass
