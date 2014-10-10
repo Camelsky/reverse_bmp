@@ -54,3 +54,6 @@ docs/_build/
 target/
 
 *config.py
+
+*.sublime-project
+*.sublime-workspace
