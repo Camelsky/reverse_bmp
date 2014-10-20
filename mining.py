@@ -44,17 +44,21 @@ def read_uids(filename):
 def collect_snslog(filename, uids):
 	#redisconn = get_redis_client()
 	evs = {}
+        loevs = {}
 	with open(filename) as logf:
 		for line in logf:
 			r = re.search(snslog_reg_str,line)
 			if r:
 				d = r.groupdict()
+                                ev = d.get('event')
+                                evs.update({ev:evs.get(ev,0)+1})
 				if d.get('uid') in uids:
 					logging.debug(d)
 					ev = d.get('event')
-					evs.update({ev:evs.get(ev,0)+1})
-	print evs
-	for k,v in evs.items():
+					loevs.update({ev:loevs.get(ev,0)+1})
+	print 'total:', evs
+	print 'loss:', loevs
+	for k,v in loevs.items():
 		print '%s,%s' % (k,v)
 
 def stat_evs(env, redisconn):
