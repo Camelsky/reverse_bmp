@@ -60,9 +60,37 @@ def _get_bitmap(date, typename, section):
         bmp.frombytes(bits)
     return bmp
 
-def get_loss_uid(bdate, tdate):
+def _filters_bmp(filters, section):
+    bmp = Bitmap()
+    for fter for filters:
+        fbmp = _get_filter_bitmp(fter, section)
+        if bmp:
+            bmp.filter(fbmp)
+        else:
+            bmp = fbmp
+    return bmp
+
+def _get_filter_bitmp(Filter, section):
+    bmp = Bitmap()
+    name , vals = Filter
+    values = vals.split(',')
+    for value in values:
+        key = dauconfig.filter_keys_conf[name].format({name:value})
+        if section:
+            key = dauconfig.BITMAP_BLK_PREFIX.format(key=key) % section
+        bits = REDIS.get(key)
+        logging.debug('redis get %s' % key)
+        if bits:
+            bmp.frombytes(bits)
+    return bmp
+
+def _get_sections():
     plus = dauconfig.MAX_BITMAP_LENGTH % dauconfig.BITMAP_BLK_LEN and 1 or 0
     sections = range(dauconfig.MAX_BITMAP_LENGTH/dauconfig.BITMAP_BLK_LEN + plus)
+    return sections    
+
+def get_loss_uid(bdate, tdate):
+    sections = _get_sections
     for section in sections:
         nbmp = _get_newuser_bmp(bdate, section)
         abmp = _get_active_bmp(tdate, section)
@@ -71,14 +99,33 @@ def get_loss_uid(bdate, tdate):
             uid = _count2id(index, section)
             yield uid
 
+def get_newuser_uid(filters ,fdate, tdate):
+    sections = _get_sections
+    for section in sections:
+        nbmp = _get_newuser_bmp(bdate, section)
+        fbmp = _filters_bitmp(filters, seciton)
+        rbmp = nbmp.filter(fbmp)
+        for index in _reverse(lbmp):
+            uid = _count2id(index, section)
+            yield uid
+
+
 def run():
-    define('day')
-    define('tday')
+    define('f')
+    define('t')
+    define('do', default='loss')
+    define('filter')
     tornado.options.parse_command_line()
-    for uid in get_loss_uid(options.day, options.tday):
-        #sys.stdout.write(uid)
-        #sys.stdout.write("/n")
-        print uid
+    
+    filters = []
+    if options.filter:
+        filters = options.filter.strip(';')
+    if options.do == 'loss':
+        for uid in get_loss_uid(options.day, options.tday):
+            print uid
+    elif options.do == 'newid':
+        for uid in get_newuser_uid(
+            filters, options.f, options.t)
 
 if __name__ == '__main__':
     run()
